@@ -3,9 +3,9 @@
 ## Cluster Configuration File ##
 ################################
 
-[cluster dask-slurm]
+[cluster dask-pbspro]
 FormLayout = selectionpanel
-Category = Schedulers
+Category = Applications
 IconUrl = https://github.com/Azure/cyclecloud-conda/raw/master/examples/dask.png
 
 Autoscale = $Autoscale
@@ -18,23 +18,17 @@ Autoscale = $Autoscale
     Region = $Region
     KeyPairLocation = ~/.ssh/cyclecloud.pem
     
-        [[[configuration]]]
-        slurm.version = $configuration_slurm_version
+        [[[cluster-init cyclecloud/pbspro:default]]]
 
+        [[[cluster-init anaconda:default:1.0.2]]]
+        [[[cluster-init anaconda:dask:1.0.2]]]
+
+        [[[configuration]]]
         anaconda.channels = $configuration_anaconda_channels
 	anaconda.env_files = $configuration_anaconda_env_files
 	anaconda.python = $configuration_anaconda_python
 	anaconda.install_type = $configuration_anaconda_install_type
 	anaconda.packages = $configuration_anaconda_packages
-
-        [[[cluster-init cyclecloud/slurm:default:1.0.2]]]
-
-        [[[cluster-init anaconda:default:1.0.2]]]
-        [[[cluster-init anaconda:dask:1.0.2]]]
-
-
-
-
 
     [[node master]]
     MachineType = $MasterMachineType
@@ -43,7 +37,10 @@ Autoscale = $Autoscale
     
         [[[configuration]]]
 
-        [[[cluster-init cyclecloud/slurm:master:1.0.2]]]
+        [[[cluster-init cyclecloud/pbspro:master]]]
+
+        [[[cluster-init anaconda:master:1.0.2]]]
+        Optional = True
 
         [[[network-interface eth0]]]
         AssociatePublicIpAddress = $UsePublicNetwork
@@ -63,7 +60,11 @@ Autoscale = $Autoscale
 
         [[[configuration]]]
 
-        [[[cluster-init cyclecloud/slurm:execute:1.0.2]]]
+        [[[cluster-init cyclecloud/pbspro:execute]]]
+
+        [[[cluster-init anaconda:execute:1.0.2]]]
+        Optional = True
+
 
         [[[network-interface eth0]]]
         AssociatePublicIpAddress = $ExecuteNodesPublic
@@ -72,12 +73,24 @@ Autoscale = $Autoscale
 [parameters About]
 Order = 1
 
-    [[parameters About Slurm]]
+    [[parameters About Anaconda]]
 
-        [[[parameter slurm]]]
+        [[[parameter anaconda]]]
         HideLabel = true
         Config.Plugin = pico.widget.HtmlTemplateWidget
-        Config.Template := "<table><tr><td><img src='static/cloud/cluster/ui/ClusterIcon/slurm.png' width='192' height='192'></td></tr><tr><td><p>Slurm is a highly configurable open source workload manager. See the <a href=\"https://www.schedmd.com/\" target=\"_blank\">Slurm project site</a> for an overview.</p><p>Follow the instructions in the <a href=\"https://github.com/azure/cyclecloud-slurm/\" target=\"_blank\">README</a> for details on instructions on extending and configuring the Project for your environment.</p></td></tr></table>"
+        Config.Template = '''<table>
+  <tr><td><img src='static/cloud/cluster/ui/ClusterIcon/anaconda.png' width='192' height='192'></td></tr>
+  <tr><td>
+      <p>This cluster installs the Anaconda or Miniconda python environment manager along side PBS.</p>
+      <br>
+      <p>See the <a href=\"https://www.anaconda.com/\" target=\"_blank\">Anaconda project site</a> for an overview.</p>
+      <br>
+      <p>Follow the instructions in the <a href=\"https://github.com/azure/cyclecloud-conda/\" target=\"_blank\">README</a> for details on instructions on extending and configuring the Project for your environment.</p>
+      <br>
+      <p style="padding: 20px"><span class="alert-info"><strong>IMPORTANT:</strong> By continuing, you must agree to the <a href="https://docs.anaconda.com/anaconda/eula" target="_blank">Anaconda license</a> terms.</span></p>      
+  </td></tr>  
+</table>
+'''
 
 [parameters Required Settings]
 Order = 10
@@ -139,6 +152,17 @@ Order = 10
         ParameterType = Azure.Subnet
         Required = True
 
+
+[parameters Advanced Settings]
+Order = 20
+
+    [[parameters Azure Settings]]
+    Order = 10 
+
+        [[[parameter Credentials]]]
+        Description = The credentials for the cloud provider
+        ParameterType = Cloud.Credentials
+
     [[parameters Anaconda Settings ]]
     Description = "Section for configuring Anaconda"
     Order = 5
@@ -168,28 +192,6 @@ Order = 10
 	description = Space separated list of conda packages to install by default
 
 
-
-[parameters Advanced Settings]
-Order = 20
-
-    [[parameters Azure Settings]]
-    Order = 10 
-
-        [[[parameter Credentials]]]
-        Description = The credentials for the cloud provider
-        ParameterType = Cloud.Credentials
-
-    [[parameters Slurm Settings ]]
-    Description = "Section for configuring Slurm"
-    Order = 5
-
-        [[[parameter configuration_slurm_version]]]
-required = True
-label = Slurm Version
-description = Version of Slurm to install on the cluster
-defaultvalue = 17.11.12-1
-
-
     [[parameters Software]]
     Description = "Specify the scheduling software, and base OS installed on all nodes, and optionally the cluster-init and chef versions from your Locker."
     Order = 10
@@ -199,7 +201,7 @@ defaultvalue = 17.11.12-1
         ParameterType = Cloud.Image
         Config.OS = linux
         DefaultValue = cycle.image.centos7
-        Config.Filter := Package in {"cycle.image.centos7", "cycle.image.ubuntu16", "cycle.image.ubuntu18"}
+        Config.Filter := Package === "cycle.image.centos7"
 
         [[[parameter MasterClusterInitSpecs]]]
         Label = Master Cluster-Init
