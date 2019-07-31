@@ -9,19 +9,20 @@ source /etc/profile.d/anaconda-env.sh
 set -x
 set -e
 
-conda update -n base -c defaults conda
+# conda update --all
 
 
 # Setup Channels
 conda config --add channels conda-forge
 conda config --add channels defaults
+conda config --add channels bokeh
 
 # Create the default environments
-for PKG in dask dask-jobqueue; do
+for PKG in bokeh dask distributed dask-jobqueue jupyter-server-proxy; do
     conda install -y ${PKG}
 done
 
-conda create -n dask dask dask-jobqueue
+conda create -n dask bokeh dask distributed dask-jobqueue jupyter-server-proxy
 
 
 
